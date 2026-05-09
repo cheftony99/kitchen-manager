@@ -1429,7 +1429,6 @@ function clearRecipeFilters(){
 // ── INGREDIENTS ──
 function renderIngrTable(){
   const q=(document.getElementById('ingr-search').value||'').toLowerCase();
-  // Special filter: "review" shows only needs_review items
   const isReviewFilter = q === 'review';
   const f=ingredients.filter(i=>{
     if (isReviewFilter) return i.review_status === 'needs_review' && i.owner_id === currentUser?.id;
@@ -1437,13 +1436,17 @@ function renderIngrTable(){
   });
   const tbody=document.getElementById('ingr-tbody');
   if(!f.length){tbody.innerHTML=`<tr class="empty-row"><td colspan="7">${isReviewFilter?'No ingredients need review — you\'re all caught up! ✓':'No ingredients found.'}</td></tr>`;return;}
-  tbody.innerHTML=f.map(i=>`<tr style="${i.review_status==='needs_review'?'background:var(--amber-dim);':''}">
-    <td>
+  tbody.innerHTML=f.map(i=>{
+    const hist = priceHistory.filter(h=>h.ingredient_id===i.id).sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at));
+    const hasHist = hist.length > 0;
+    const trendIcon = hasHist ? priceTrendIcon(hist) : '';
+    return `<tr style="${i.review_status==='needs_review'?'background:var(--amber-dim);':''}" class="ingr-row">
+    <td style="cursor:${hasHist?'pointer':'default'};" ${hasHist?`onclick="togglePriceTrend('${i.id}')"`:''}>
       ${esc(i.name)}
       ${i.review_status==='needs_review'?`<div style="font-size:10px;color:var(--amber);font-weight:700;">⚠ Needs review${i.review_notes?' — '+i.review_notes:''}</div>`:''}
     </td>
     <td>${i.unit}</td>
-    <td class="mono">$${parseFloat(i.cost_per_unit).toFixed(3)}</td>
+    <td class="mono">$${parseFloat(i.cost_per_unit).toFixed(3)} ${trendIcon}</td>
     <td><span class="badge badge-gray">${esc(i.category)}</span></td>
     <td style="color:var(--text3)">${i.supplier||'—'}</td>
     <td>
@@ -1452,7 +1455,103 @@ function renderIngrTable(){
         :''}
     </td>
     <td><button class="del-btn" onclick="deleteIngredient('${i.id}',event)">✕</button></td>
-  </tr>`).join('');
+  </tr>
+  <tr id="trend-${i.id}" style="display:none;">
+    <td colspan="7" style="padding:0;"></td>
+  </tr>`;
+  }).join('');
+}
+
+function priceTrendIcon(hist) {
+  if (!hist.length) return '';
+  const last = hist[hist.length - 1];
+  const pct = last.change_pct || 0;
+  if (pct > 1) return `<span style="color:var(--red);font-size:10px;" title="+${pct.toFixed(1)}%">▲</span>`;
+  if (pct < -1) return `<span style="color:var(--green);font-size:10px;" title="${pct.toFixed(1)}%">▼</span>`;
+  return '';
+}
+
+function togglePriceTrend(ingredientId) {
+  const row = document.getElementById(`trend-${ingredientId}`);
+  if (!row) return;
+  if (row.style.display !== 'none') { row.style.display = 'none'; return; }
+  // Close any other open trend rows
+  document.querySelectorAll('[id^="trend-"]').forEach(r => { if (r.id !== `trend-${ingredientId}`) r.style.display = 'none'; });
+  row.style.display = '';
+  const cell = row.querySelector('td');
+  const ing = ingredients.find(x => x.id === ingredientId);
+  if (!ing) return;
+  const hist = priceHistory.filter(h => h.ingredient_id === ingredientId)
+    .sort((a, b) => new Date(a.recorded_at) - new Date(b.recorded_at));
+  // Build price points: start with oldest known price, then each new_price
+  const points = [];
+  if (hist.length > 0) {
+    points.push({ date: new Date(hist[0].recorded_at), price: parseFloat(hist[0].old_price) });
+    hist.forEach(h => points.push({ date: new Date(h.recorded_at), price: parseFloat(h.new_price) }));
+  }
+  // Add current price as latest point if different from last
+  const currentPrice = parseFloat(ing.cost_per_unit) || 0;
+  if (points.length === 0 || Math.abs(points[points.length-1].price - currentPrice) > 0.001) {
+    points.push({ date: new Date(), price: currentPrice });
+  }
+  // Keep last 5 data points (covers ~4 weeks of changes)
+  const recent = points.slice(-5);
+  if (recent.length < 2) {
+    cell.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--text3);">Only one price point so far — trend will appear after the next invoice.</div>`;
+    return;
+  }
+  cell.innerHTML = renderPriceTrendChart(ing, recent, hist);
+}
+
+function renderPriceTrendChart(ing, points, allHist) {
+  const W = 320, H = 100, PAD = 30, RPAD = 10;
+  const prices = points.map(p => p.price);
+  const minP = Math.min(...prices) * 0.92;
+  const maxP = Math.max(...prices) * 1.08;
+  const range = maxP - minP || 1;
+
+  function x(i) { return PAD + (i / (points.length - 1)) * (W - PAD - RPAD); }
+  function y(p) { return H - PAD + 5 - ((p - minP) / range) * (H - PAD - 5); }
+
+  // Line path
+  const linePts = points.map((p, i) => `${x(i).toFixed(1)},${y(p.price).toFixed(1)}`);
+  const polyline = linePts.join(' ');
+
+  // Gradient fill
+  const fillPts = `${x(0).toFixed(1)},${(H - PAD + 5).toFixed(1)} ${polyline} ${x(points.length - 1).toFixed(1)},${(H - PAD + 5).toFixed(1)}`;
+
+  // Dots and labels
+  const dots = points.map((p, i) => {
+    const dateStr = p.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `<circle cx="${x(i).toFixed(1)}" cy="${y(p.price).toFixed(1)}" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>
+    <text x="${x(i).toFixed(1)}" y="${y(p.price).toFixed(1) - 8}" text-anchor="middle" fill="var(--text2)" font-size="9" font-family="var(--fm)">$${p.price.toFixed(2)}</text>
+    <text x="${x(i).toFixed(1)}" y="${(H - 5).toFixed(1)}" text-anchor="middle" fill="var(--text3)" font-size="8" font-family="var(--ff)">${dateStr}</text>`;
+  }).join('\n');
+
+  // Overall change
+  const first = prices[0], last = prices[prices.length - 1];
+  const changePct = first > 0 ? ((last - first) / first * 100) : 0;
+  const changeColor = changePct > 1 ? 'var(--red)' : changePct < -1 ? 'var(--green)' : 'var(--text3)';
+  const changeArrow = changePct > 1 ? '▲' : changePct < -1 ? '▼' : '—';
+  const changeLabel = `${changeArrow} ${Math.abs(changePct).toFixed(1)}% over ${points.length - 1} update${points.length - 1 !== 1 ? 's' : ''}`;
+
+  return `<div style="padding:12px 16px;background:var(--surface);border-top:1px solid var(--border);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:12px;font-weight:600;color:var(--text2);">— PRICE TREND: ${esc(ing.name).toUpperCase()}</span>
+      <span style="font-size:11px;font-family:var(--fm);color:${changeColor};">${changeLabel}</span>
+    </div>
+    <svg width="${W}" height="${H}" style="display:block;">
+      <defs>
+        <linearGradient id="tg-${ing.id.slice(0,8)}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <polygon points="${fillPts}" fill="url(#tg-${ing.id.slice(0,8)})"/>
+      <polyline points="${polyline}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+    </svg>
+  </div>`;
 }
 
 async function approveIngredient(id, event) {
@@ -3190,17 +3289,18 @@ async function importInvoiceIngredients() {
             .eq('id', existing.id);
 
           if (!upErr) {
-            existing.cost_per_unit = item.unit_price || 0; // update local cache
-            // Log price history if changed
-            if (item.unit_price > 0 && Math.abs(parseFloat(existing.cost_per_unit) - item.unit_price) > 0.001) {
+            // Log price history if changed (BEFORE updating local cache)
+            const oldCost = parseFloat(existing.cost_per_unit) || 0;
+            if (item.unit_price > 0 && Math.abs(oldCost - item.unit_price) > 0.001) {
               try { await sb.from('ingredient_price_history').insert({
                 owner_id: uid, ingredient_id: existing.id,
                 supplier_name: inv.supplier_name, invoice_id: invId,
-                old_price: existing.cost_per_unit, new_price: item.unit_price,
-                change_pct: existing.cost_per_unit > 0 ?
-                  ((item.unit_price - existing.cost_per_unit) / existing.cost_per_unit * 100) : 100
+                old_price: oldCost, new_price: item.unit_price,
+                change_pct: oldCost > 0 ?
+                  ((item.unit_price - oldCost) / oldCost * 100) : 100
               }); } catch(_) {}
             }
+            existing.cost_per_unit = item.unit_price || 0; // update local cache
             updated++;
           } else {
             console.error('Update error:', upErr);
