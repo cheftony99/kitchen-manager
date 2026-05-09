@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KitchenPro — Recipe & Cost Control for Restaurants</title>
+<meta name="description" content="KitchenPro is recipe management and food costing built for real kitchens. Snap a photo of any recipe and our AI extracts ingredients, costs, and prep steps automatically. $1 trial, then $24/month." />
+<link rel="canonical" href="https://kitchenpro.restaurant/" />
+<meta property="og:title" content="KitchenPro — Recipe & Cost Control for Restaurants" />
+<meta property="og:description" content="Snap a photo of any recipe and AI builds it. Manage costs, scale batches, run your kitchen smarter." />
+<meta property="og:url" content="https://kitchenpro.restaurant/" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#4a6741" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #faf7f2;
+  --tan: #f0e8d8;
+  --tan2: #e4d5bc;
+  --tan3: #c8b89a;
+  --brown: #7a5c3a;
+  --brown-light: #a07850;
+  --green: #4a6741;
+  --green2: #5d7f53;
+  --green3: #7a9e6e;
+  --green-light: #e8f0e4;
+  --green-pale: #f2f6f0;
+  --text: #2c2416;
+  --text2: #5a4a32;
+  --text3: #8a7a62;
+  --white: #ffffff;
+  --shadow: rgba(74, 103, 65, 0.12);
+  --ff: 'Lato', sans-serif;
+  --fd: 'Playfair Display', serif;
+  --fi: 'Lora', serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--ff); background: var(--cream); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(250,247,242,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--tan2);
+  padding: 0 5%;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.nav-logo { font-family: var(--fd); font-size: 20px; color: var(--green); font-weight: 600; }
+.nav-logo span { color: var(--brown); font-style: italic; }
+.nav-links { display: flex; align-items: center; gap: 32px; }
+.nav-links a { font-size: 14px; color: var(--text2); text-decoration: none; font-weight: 400; transition: color .2s; }
+.nav-links a:hover { color: var(--green); }
+.nav-cta {
+  background: var(--green); color: var(--white) !important;
+  padding: 9px 22px; border-radius: 6px; font-weight: 700 !important;
+  font-size: 13px !important; letter-spacing: 0.3px;
+  transition: background .2s !important;
+}
+.nav-cta:hover { background: var(--green2) !important; color: var(--white) !important; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 120px 5% 80px;
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: -100px; right: -200px;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(122,158,110,0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute; bottom: -50px; left: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(200,184,154,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.hero-inner { max-width: 1200px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; position: relative; z-index: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green-light); color: var(--green);
+  font-size: 12px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; padding: 6px 14px; border-radius: 99px;
+  margin-bottom: 24px;
+}
+.hero-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green3); }
+.hero h1 {
+  font-family: var(--fd); font-size: clamp(38px, 5vw, 58px);
+  line-height: 1.1; color: var(--text); margin-bottom: 24px;
+  font-weight: 600;
+}
+.hero h1 em { font-style: italic; color: var(--green); }
+.hero-sub {
+  font-size: 18px; color: var(--text2); line-height: 1.7;
+  margin-bottom: 40px; font-weight: 300; max-width: 480px;
+}
+.hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--green); color: var(--white);
+  padding: 14px 32px; border-radius: 8px;
+  font-size: 15px; font-weight: 700; text-decoration: none;
+  border: none; cursor: pointer; font-family: var(--ff);
+  transition: all .2s; letter-spacing: 0.2px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { background: var(--green2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(74,103,65,0.25); }
+.btn-secondary {
+  color: var(--text2); font-size: 14px; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px; font-weight: 400;
+  transition: color .2s;
+}
+.btn-secondary:hover { color: var(--green); }
+.hero-price-note { font-size: 12px; color: var(--text3); margin-top: 12px; }
+
+.hero-visual {
+  position: relative;
+}
+.app-preview {
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(74,103,65,0.15), 0 4px 16px rgba(0,0,0,0.06);
+  overflow: hidden;
+  border: 1px solid var(--tan2);
+}
+.app-bar {
+  background: var(--green); padding: 12px 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.app-bar-dot { width: 10px; height: 10px; border-radius: 50%; }
+.app-bar-title { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 400; margin-left: 8px; }
+.app-content { padding: 20px; }
+.app-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.app-metric { background: var(--green-pale); border-radius: 8px; padding: 12px; }
+.app-metric-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.app-metric-val { font-family: var(--fd); font-size: 22px; color: var(--green); font-weight: 600; }
+.app-recipe-card { background: var(--tan); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.app-recipe-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.app-recipe-cat { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.app-recipe-cost { text-align: right; }
+.app-recipe-pct { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 99px; }
+.pct-good { background: var(--green-light); color: var(--green); }
+.pct-warn { background: #fef3e2; color: #b45309; }
+.app-bar-chart { margin-top: 14px; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.bar-label { font-size: 11px; color: var(--text3); width: 80px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 6px; background: var(--tan); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; background: var(--green3); }
+.bar-val { font-size: 11px; color: var(--text2); font-weight: 700; width: 40px; text-align: right; flex-shrink: 0; }
+
+/* ── SOCIAL PROOF ── */
+.social-proof {
+  background: var(--tan); padding: 28px 5%; border-top: 1px solid var(--tan2); border-bottom: 1px solid var(--tan2);
+}
+.social-proof-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 48px; flex-wrap: wrap; }
+.proof-item { display: flex; align-items: center; gap: 10px; }
+.proof-icon { width: 32px; height: 32px; background: var(--green-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.proof-text { font-size: 13px; color: var(--text2); font-weight: 400; }
+.proof-text strong { color: var(--text); font-weight: 700; }
+
+/* ── SECTIONS ── */
+section { padding: 100px 5%; }
+.section-inner { max-width: 1200px; margin: 0 auto; }
+.section-tag { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); margin-bottom: 12px; }
+.section-title { font-family: var(--fd); font-size: clamp(28px, 4vw, 42px); line-height: 1.2; color: var(--text); margin-bottom: 16px; }
+.section-title em { font-style: italic; color: var(--green); }
+.section-sub { font-size: 17px; color: var(--text2); max-width: 560px; line-height: 1.7; font-weight: 300; margin-bottom: 60px; }
+
+/* ── FEATURES ── */
+.features-bg { background: var(--white); }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.feature-card {
+  background: var(--cream); border: 1px solid var(--tan2);
+  border-radius: 12px; padding: 28px;
+  transition: all .2s;
+}
+.feature-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px var(--shadow); border-color: var(--green3); }
+.feature-icon {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: var(--green-light); display: flex; align-items: center;
+  justify-content: center; font-size: 20px; margin-bottom: 18px;
+}
+.feature-title { font-family: var(--fd); font-size: 18px; color: var(--text); margin-bottom: 10px; font-weight: 600; }
+.feature-desc { font-size: 14px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+
+/* ── HOW IT WORKS ── */
+.how-bg { background: var(--green-pale); }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; position: relative; }
+.steps::before {
+  content: '';
+  position: absolute; top: 28px; left: calc(16.66% + 16px); right: calc(16.66% + 16px);
+  height: 1px; background: var(--tan2); z-index: 0;
+}
+.step { text-align: center; position: relative; z-index: 1; }
+.step-num {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--green); color: var(--white);
+  font-family: var(--fd); font-size: 20px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; box-shadow: 0 4px 16px rgba(74,103,65,0.3);
+}
+.step-title { font-family: var(--fd); font-size: 18px; color: var(--text); margin-bottom: 10px; font-weight: 600; }
+.step-desc { font-size: 14px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+
+/* ── COSTING DEMO ── */
+.costing-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.costing-visual {
+  background: var(--white); border-radius: 16px;
+  border: 1px solid var(--tan2);
+  overflow: hidden;
+  box-shadow: 0 8px 40px var(--shadow);
+}
+.cv-header { background: var(--tan); padding: 14px 20px; border-bottom: 1px solid var(--tan2); display: flex; align-items: center; justify-content: space-between; }
+.cv-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.cv-badge { font-size: 11px; background: var(--green-light); color: var(--green); padding: 3px 10px; border-radius: 99px; font-weight: 700; }
+.cv-body { padding: 20px; }
+.cv-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--tan); }
+.cv-row:last-child { border: none; }
+.cv-row-name { font-size: 13px; color: var(--text); }
+.cv-row-qty { font-size: 12px; color: var(--text3); }
+.cv-row-cost { font-size: 13px; font-weight: 700; color: var(--text2); font-family: 'Courier New', monospace; }
+.cv-total { background: var(--green-pale); padding: 14px 20px; display: flex; justify-content: space-between; }
+.cv-total-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.cv-total-val { font-size: 15px; font-weight: 700; color: var(--green); font-family: 'Courier New', monospace; }
+.cv-pct-bar { padding: 16px 20px; background: var(--tan); }
+.cv-pct-label { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.cv-pct-text { font-size: 12px; color: var(--text3); }
+.cv-pct-val { font-size: 12px; font-weight: 700; color: var(--green); }
+.cv-track { height: 8px; background: var(--tan2); border-radius: 4px; overflow: hidden; }
+.cv-fill { height: 100%; width: 28%; background: var(--green3); border-radius: 4px; }
+
+.costing-points { list-style: none; }
+.costing-points li {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 18px 0; border-bottom: 1px solid var(--tan2);
+}
+.costing-points li:last-child { border: none; }
+.cp-check {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--green-light); color: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0; margin-top: 2px;
+}
+.cp-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.cp-desc { font-size: 13px; color: var(--text2); line-height: 1.6; font-weight: 300; }
+
+/* ── TESTIMONIALS ── */
+.test-bg { background: var(--tan); }
+.test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.test-card {
+  background: var(--white); border-radius: 12px; padding: 28px;
+  border: 1px solid var(--tan2); position: relative;
+}
+.test-quote {
+  font-family: var(--fi); font-size: 15px; color: var(--text2);
+  line-height: 1.75; margin-bottom: 20px; font-style: italic;
+}
+.test-quote::before { content: '\201C'; font-size: 40px; color: var(--green3); line-height: 0; vertical-align: -14px; margin-right: 2px; }
+.test-author { display: flex; align-items: center; gap: 12px; }
+.test-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--green-light); display: flex; align-items: center;
+  justify-content: center; font-family: var(--fd); font-size: 16px; color: var(--green); font-weight: 600;
+}
+.test-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.test-role { font-size: 12px; color: var(--text3); }
+.stars { color: #d4a017; font-size: 12px; letter-spacing: 1px; margin-bottom: 14px; }
+
+/* ── PRICING ── */
+.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 760px; margin: 0 auto; }
+.price-card {
+  background: var(--white); border-radius: 16px; padding: 36px;
+  border: 1px solid var(--tan2); text-align: center;
+  transition: all .2s;
+}
+.price-card.featured {
+  border-color: var(--green); border-width: 2px;
+  box-shadow: 0 12px 40px rgba(74,103,65,0.15);
+  position: relative;
+}
+.price-badge {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  background: var(--green); color: var(--white);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+  padding: 4px 16px; border-radius: 99px; text-transform: uppercase;
+  white-space: nowrap;
+}
+.price-name { font-size: 13px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.price-amount { font-family: var(--fd); font-size: 52px; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.price-amount sup { font-size: 24px; vertical-align: top; margin-top: 8px; }
+.price-period { font-size: 13px; color: var(--text3); margin-bottom: 8px; }
+.price-trial { font-size: 12px; color: var(--green); font-weight: 700; background: var(--green-light); padding: 4px 12px; border-radius: 99px; display: inline-block; margin-bottom: 28px; }
+.price-features { list-style: none; text-align: left; margin-bottom: 28px; }
+.price-features li { font-size: 13px; color: var(--text2); padding: 7px 0; border-bottom: 1px solid var(--tan); display: flex; gap: 8px; align-items: center; }
+.price-features li:last-child { border: none; }
+.pf-check { color: var(--green); font-weight: 700; }
+.price-btn {
+  display: block; width: 100%; padding: 13px;
+  background: var(--green); color: var(--white);
+  border-radius: 8px; font-size: 14px; font-weight: 700;
+  text-decoration: none; text-align: center; font-family: var(--ff);
+  border: none; cursor: pointer; transition: all .2s;
+}
+.price-btn:hover { background: var(--green2); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,103,65,0.25); }
+.price-btn.outline {
+  background: transparent; color: var(--green); border: 1.5px solid var(--green3);
+}
+.price-btn.outline:hover { background: var(--green-light); }
+.pricing-note { text-align: center; font-size: 13px; color: var(--text3); margin-top: 24px; }
+
+/* ── CTA BAND ── */
+.cta-band {
+  background: var(--green); padding: 80px 5%;
+  text-align: center; position: relative; overflow: hidden;
+}
+.cta-band::before {
+  content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-band h2 { font-family: var(--fd); font-size: clamp(28px, 4vw, 42px); color: var(--white); margin-bottom: 14px; }
+.cta-band h2 em { font-style: italic; color: rgba(255,255,255,0.7); }
+.cta-band p { font-size: 17px; color: rgba(255,255,255,0.75); margin-bottom: 36px; font-weight: 300; }
+.btn-white {
+  background: var(--white); color: var(--green);
+  padding: 14px 36px; border-radius: 8px;
+  font-size: 15px; font-weight: 700; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all .2s;
+}
+.btn-white:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.cta-sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 14px; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--text); padding: 48px 5% 32px;
+}
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; flex-wrap: wrap; gap: 32px; }
+.footer-brand { font-family: var(--fd); font-size: 22px; color: var(--cream); font-weight: 600; }
+.footer-brand span { font-style: italic; color: var(--green3); }
+.footer-tagline { font-size: 13px; color: var(--tan3); margin-top: 6px; font-weight: 300; }
+.footer-links { display: flex; gap: 48px; flex-wrap: wrap; }
+.footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--tan3); margin-bottom: 12px; }
+.footer-col a { display: block; font-size: 13px; color: rgba(250,247,242,0.55); text-decoration: none; margin-bottom: 8px; transition: color .2s; }
+.footer-col a:hover { color: var(--cream); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.footer-copy { font-size: 12px; color: rgba(250,247,242,0.3); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.hero-visual { animation: float 6s ease-in-out infinite; }
+.fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+.hero-left > * { animation: fadeUp .7s ease forwards; }
+.hero-eyebrow { animation-delay: .1s; }
+.hero h1 { animation-delay: .2s; }
+.hero-sub { animation-delay: .3s; }
+.hero-actions { animation-delay: .4s; }
+.hero-price-note { animation-delay: .5s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero-inner, .costing-inner { grid-template-columns: 1fr; gap: 48px; }
+  .hero-visual { order: -1; }
+  .features-grid, .steps, .test-grid { grid-template-columns: 1fr; }
+  .steps::before { display: none; }
+  .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Kitchen<span>Pro</span></div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://kitchenpro.restaurant/app" class="nav-cta">Start $1 trial →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-eyebrow">Built for restaurant kitchens</div>
+      <h1>Run your kitchen<br>with <em>confidence</em><br>and clarity</h1>
+      <p class="hero-sub">Snap a photo of any recipe and AI builds it instantly. Manage costs, scale batches, and run your kitchen smarter — all in one place.</p>
+      <div class="hero-actions">
+        <a href="#pricing" class="btn-primary">
+          Start $1 trial
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#features" class="btn-secondary">
+          See all features
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <p class="hero-price-note">$1 for 2 weeks · then $24/month · cancel anytime</p>
+    </div>
+
+    <div class="hero-visual">
+      <div class="app-preview">
+        <div class="app-bar">
+          <div class="app-bar-dot" style="background:#ff6b6b"></div>
+          <div class="app-bar-dot" style="background:#ffd93d"></div>
+          <div class="app-bar-dot" style="background:#6bcb77"></div>
+          <div class="app-bar-title">KitchenPro — Dashboard</div>
+        </div>
+        <div class="app-content">
+          <div class="app-metrics">
+            <div class="app-metric"><div class="app-metric-label">Recipes</div><div class="app-metric-val">24</div></div>
+            <div class="app-metric"><div class="app-metric-label">Avg cost %</div><div class="app-metric-val" style="color:var(--green)">28%</div></div>
+            <div class="app-metric"><div class="app-metric-label">Best margin</div><div class="app-metric-val" style="color:var(--brown)">$11</div></div>
+          </div>
+          <div class="app-recipe-card">
+            <div><div class="app-recipe-name">Mushroom Risotto</div><div class="app-recipe-cat">Main · 4 servings</div></div>
+            <div class="app-recipe-cost"><span class="app-recipe-pct pct-good">26%</span></div>
+          </div>
+          <div class="app-recipe-card">
+            <div><div class="app-recipe-name">Chicken Piccata</div><div class="app-recipe-cat">Main · 4 servings</div></div>
+            <div class="app-recipe-cost"><span class="app-recipe-pct pct-good">29%</span></div>
+          </div>
+          <div class="app-recipe-card" style="background:var(--green-pale)">
+            <div><div class="app-recipe-name">Pan-Seared Salmon</div><div class="app-recipe-cat">Main · 2 servings</div></div>
+            <div class="app-recipe-cost"><span class="app-recipe-pct pct-warn">38%</span></div>
+          </div>
+          <div class="app-bar-chart">
+            <div class="bar-row"><span class="bar-label">Risotto</span><div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--green3)"></div></div><span class="bar-val">26%</span></div>
+            <div class="bar-row"><span class="bar-label">Piccata</span><div class="bar-track"><div class="bar-fill" style="width:29%;background:var(--green3)"></div></div><span class="bar-val">29%</span></div>
+            <div class="bar-row"><span class="bar-label">Salmon</span><div class="bar-track"><div class="bar-fill" style="width:38%;background:#d4a017"></div></div><span class="bar-val">38%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<div class="social-proof">
+  <div class="social-proof-inner">
+    <div class="proof-item"><div class="proof-icon">🤖</div><div class="proof-text"><strong>AI-powered import</strong> — any recipe format</div></div>
+    <div class="proof-item"><div class="proof-icon">📱</div><div class="proof-text"><strong>Works on any device</strong> — phone, tablet, desktop</div></div>
+    <div class="proof-item"><div class="proof-icon">🔒</div><div class="proof-text"><strong>Secure per-kitchen</strong> data isolation</div></div>
+    <div class="proof-item"><div class="proof-icon">💳</div><div class="proof-text"><strong>Cancel anytime</strong> — no long-term contracts</div></div>
+  </div>
+</div>
+
+<!-- AI SPOTLIGHT -->
+<section style="background:var(--green);padding:60px 5%;">
+  <div class="section-inner" style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:12px;">New — AI recipe import</div>
+      <h2 style="font-family:var(--fd);font-size:clamp(26px,4vw,40px);color:#fff;margin-bottom:16px;line-height:1.2;">Your recipe box,<br><em style="color:rgba(255,255,255,0.75);">digitized in seconds</em></h2>
+      <p style="font-size:16px;color:rgba(255,255,255,0.8);line-height:1.7;margin-bottom:28px;font-weight:300;">No more retyping recipes. Take a photo of any recipe card, menu, PDF, or handwritten note — KitchenPro's AI reads it and fills in every field automatically. Ingredients, quantities, units, prep steps — all extracted and ready to cost.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">📷</div>
+          <span style="font-size:14px;color:rgba(255,255,255,0.85);">Photos of handwritten recipe cards</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">📄</div>
+          <span style="font-size:14px;color:rgba(255,255,255,0.85);">PDF recipe documents and cookbooks</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🍽</div>
+          <span style="font-size:14px;color:rgba(255,255,255,0.85);">Printed menus and restaurant cards</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">📊</div>
+          <span style="font-size:14px;color:rgba(255,255,255,0.85);">Bulk ingredient lists from Excel or CSV</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.1);border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.2);">
+      <div style="background:rgba(255,255,255,0.95);border-radius:10px;padding:16px;margin-bottom:12px;">
+        <div style="font-size:11px;color:#8a7a62;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Uploading recipe...</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="width:40px;height:40px;border-radius:8px;background:#e8f0e4;display:flex;align-items:center;justify-content:center;font-size:18px;">📷</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#2c2416;">Mushroom_Risotto.jpg</div>
+            <div style="font-size:11px;color:#8a7a62;">AI reading recipe...</div>
+          </div>
+        </div>
+        <div style="height:4px;background:#e4d5bc;border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:75%;background:#4a6741;border-radius:2px;"></div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.95);border-radius:10px;padding:16px;">
+        <div style="font-size:11px;color:#4a6741;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">✓ Recipe extracted</div>
+        <div style="font-size:14px;font-weight:700;color:#2c2416;margin-bottom:4px;">Mushroom Risotto</div>
+        <div style="font-size:11px;color:#8a7a62;margin-bottom:10px;">Main · 4 servings · $16.00</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:12px;color:#5a4a32;">✓ 6 ingredients extracted</div>
+          <div style="font-size:12px;color:#5a4a32;">✓ 5 prep steps extracted</div>
+          <div style="font-size:12px;color:#5a4a32;">✓ Food cost: 28% — Good</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-bg" id="features">
+  <div class="section-inner">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Everything your kitchen<br><em>actually needs</em></h2>
+    <p class="section-sub">Designed with real kitchen workflows in mind — not a spreadsheet dressed up as software.</p>
+    <div class="features-grid fade-up">
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI recipe import</div>
+        <p class="feature-desc">Snap a photo of any recipe — handwritten card, PDF, printed menu, old cookbook — and AI extracts every ingredient, quantity, and prep step automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <div class="feature-title">Live food costing</div>
+        <p class="feature-desc">See your food cost percentage update in real time as you build recipes. Know instantly which dishes make money and which need a price increase.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Bulk ingredient upload</div>
+        <p class="feature-desc">Import your entire ingredient list with costs from Excel or CSV in seconds. No more entering items one by one — your whole inventory loaded instantly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📷</div>
+        <div class="feature-title">Step-by-step photo guide</div>
+        <p class="feature-desc">Attach photos to each individual prep step. Your team sees exactly what every stage should look like — no guesswork, no miscommunication.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Printable prep sheets</div>
+        <p class="feature-desc">Generate clean, formatted prep sheets for any recipe instantly. Print them or pull up on a tablet during service prep.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚖️</div>
+        <div class="feature-title">Batch scaling</div>
+        <p class="feature-desc">Scale any recipe from 4 portions to 400 with one input. All ingredient quantities adjust automatically — no mental math required.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-bg" id="how-it-works">
+  <div class="section-inner">
+    <div class="section-tag">Process</div>
+    <h2 class="section-title">Up and running in<br><em>under an hour</em></h2>
+    <p class="section-sub">No training required. If you can run a kitchen, you can run KitchenPro.</p>
+    <div class="steps fade-up">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Import your ingredients</div>
+        <p class="step-desc">Upload your ingredient list from Excel or CSV — or add items one by one. Costs are tracked automatically from day one.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Upload your recipes</div>
+        <p class="step-desc">Snap a photo of any recipe — handwritten, printed, or PDF — and AI fills in every field. Or build from scratch in minutes.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Run your kitchen</div>
+        <p class="step-desc">Print prep sheets, scale recipes for tonight's covers, and keep food costs exactly where they should be.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COSTING DEMO -->
+<section style="background:var(--white);">
+  <div class="section-inner">
+    <div class="costing-inner">
+      <div>
+        <div class="section-tag">Food costing</div>
+        <h2 class="section-title">Know your numbers<br><em>before service</em></h2>
+        <p class="section-sub" style="margin-bottom:32px">Most restaurants find out their margins are wrong at the end of the month. KitchenPro tells you instantly.</p>
+        <ul class="costing-points fade-up">
+          <li>
+            <div class="cp-check">✓</div>
+            <div><div class="cp-title">Real-time food cost %</div><div class="cp-desc">As you add ingredients to a recipe, see your food cost percentage update live alongside your menu price.</div></div>
+          </li>
+          <li>
+            <div class="cp-check">✓</div>
+            <div><div class="cp-title">Gross profit per cover</div><div class="cp-desc">See exactly how much you make per serving on every dish — sorted, ranked, and color-coded.</div></div>
+          </li>
+          <li>
+            <div class="cp-check">✓</div>
+            <div><div class="cp-title">Performance ratings</div><div class="cp-desc">Dishes are automatically rated Excellent, Good, Fair, or Review — so you know where to focus first.</div></div>
+          </li>
+          <li>
+            <div class="cp-check">✓</div>
+            <div><div class="cp-title">One-click price updates</div><div class="cp-desc">When your chicken supplier raises prices, update the ingredient cost once and all recipes recalculate.</div></div>
+          </li>
+        </ul>
+      </div>
+      <div class="fade-up">
+        <div class="costing-visual">
+          <div class="cv-header"><span class="cv-title">Mushroom Risotto — costing</span><span class="cv-badge">Good ✓</span></div>
+          <div class="cv-body">
+            <div class="cv-row"><span class="cv-row-name">Arborio rice<br><span class="cv-row-qty">2 cups</span></span><span class="cv-row-cost">$1.20</span></div>
+            <div class="cv-row"><span class="cv-row-name">Porcini mushrooms<br><span class="cv-row-qty">6 oz</span></span><span class="cv-row-cost">$3.60</span></div>
+            <div class="cv-row"><span class="cv-row-name">Parmesan<br><span class="cv-row-qty">2 oz</span></span><span class="cv-row-cost">$0.90</span></div>
+            <div class="cv-row"><span class="cv-row-name">Heavy cream<br><span class="cv-row-qty">½ cup</span></span><span class="cv-row-cost">$0.40</span></div>
+            <div class="cv-row"><span class="cv-row-name">White wine, garlic, oil<br><span class="cv-row-qty">misc</span></span><span class="cv-row-cost">$0.55</span></div>
+          </div>
+          <div class="cv-total"><span class="cv-total-label">Total cost · 4 servings</span><span class="cv-total-val">$6.65</span></div>
+          <div class="cv-total" style="background:var(--white)"><span class="cv-total-label">Cost per serving</span><span class="cv-total-val">$1.66</span></div>
+          <div class="cv-total" style="background:var(--white)"><span class="cv-total-label">Menu price</span><span class="cv-total-val">$16.00</span></div>
+          <div class="cv-pct-bar">
+            <div class="cv-pct-label"><span class="cv-pct-text">Food cost %</span><span class="cv-pct-val">28% — Good</span></div>
+            <div class="cv-track"><div class="cv-fill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="test-bg">
+  <div class="section-inner">
+    <div class="section-tag">From real kitchens</div>
+    <h2 class="section-title">What chefs are saying</h2>
+    <p class="section-sub">From fine dining to neighborhood bistros.</p>
+    <div class="test-grid fade-up">
+      <div class="test-card">
+        <div class="stars">★★★★★</div>
+        <p class="test-quote">We were running at 38% food cost and didn't realize it until we loaded all our recipes in. Fixed two dishes and dropped to 31% in a week.</p>
+        <div class="test-author"><div class="test-avatar">MR</div><div><div class="test-name">Marcus R.</div><div class="test-role">Executive Chef, Bistro Nouveau</div></div></div>
+      </div>
+      <div class="test-card">
+        <div class="stars">★★★★★</div>
+        <p class="test-quote">The prep sheets alone are worth it. My sous chef prints them every morning and the whole prep section runs smoother than it ever has.</p>
+        <div class="test-author"><div class="test-avatar">SL</div><div><div class="test-name">Sofia L.</div><div class="test-role">Owner / Chef, Café Verdana</div></div></div>
+      </div>
+      <div class="test-card">
+        <div class="stars">★★★★★</div>
+        <p class="test-quote">When my produce supplier raised prices I updated 6 ingredients and instantly saw which menu items I needed to reprice. Game changer.</p>
+        <div class="test-author"><div class="test-avatar">TC</div><div><div class="test-name">Tony C.</div><div class="test-role">Chef-Owner, Amalfi Kitchen</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section style="background:var(--cream);" id="pricing">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-tag" style="text-align:center;">Pricing</div>
+    <h2 class="section-title" style="text-align:center;">Simple, honest pricing</h2>
+    <p class="section-sub" style="margin:0 auto 48px;text-align:center;">Start with a $1 trial for 2 weeks. No contracts, no setup fees, no surprises.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">Trial</div>
+        <div class="price-amount"><sup>$</sup>1</div>
+        <div class="price-period">for your first 14 days</div>
+        <div class="price-trial">Full access, no limits</div>
+        <ul class="price-features">
+          <li><span class="pf-check">✓</span> Unlimited recipes</li>
+          <li><span class="pf-check">✓</span> AI recipe import (photo, PDF, any format)</li>
+          <li><span class="pf-check">✓</span> Bulk ingredient upload (Excel/CSV)</li>
+          <li><span class="pf-check">✓</span> Step-by-step photo guides</li>
+          <li><span class="pf-check">✓</span> Food cost % analyzer</li>
+          <li><span class="pf-check">✓</span> Printable prep sheets & batch scaling</li>
+        </ul>
+        <a href="https://kitchenpro.restaurant/app" class="price-btn outline">Start $1 trial →</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-badge">Most popular</div>
+        <div class="price-name">Monthly</div>
+        <div class="price-amount"><sup>$</sup>24</div>
+        <div class="price-period">per month after trial</div>
+        <div class="price-trial">Launch price — locked in forever</div>
+        <ul class="price-features">
+          <li><span class="pf-check">✓</span> Everything in Trial</li>
+          <li><span class="pf-check">✓</span> Unlimited team access</li>
+          <li><span class="pf-check">✓</span> All future AI features included</li>
+          <li><span class="pf-check">✓</span> Priority support</li>
+          <li><span class="pf-check">✓</span> Price locked at $24/mo</li>
+          <li><span class="pf-check">✓</span> Cancel anytime</li>
+        </ul>
+        <a href="https://kitchenpro.restaurant/app" class="price-btn">Get started →</a>
+      </div>
+    </div>
+    <p class="pricing-note">Secure payment by Stripe · Instant access after signup · No credit card required for account creation</p>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<div class="cta-band">
+  <h2>Your recipes are already<br><em>somewhere in your kitchen</em></h2>
+  <p>Snap a photo and let AI do the work. Food costs, prep sheets, and your whole menu — organized in minutes.</p>
+  <a href="https://kitchenpro.restaurant/app" class="btn-white">
+    Start your $1 trial today
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+  <p class="cta-sub">$1 for 2 weeks · then $24/month · cancel anytime · no risk</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">Kitchen<span>Pro</span></div>
+        <div class="footer-tagline">Recipe & cost control for restaurant kitchens</div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <div class="footer-col-title">Product</div>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#how-it-works">How it works</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Get started</div>
+          <a href="https://kitchenpro.restaurant/app">Start $1 trial</a>
+          <a href="https://kitchenpro.restaurant/app">Sign in</a>
+          <a href="mailto:hello@kitchenpro.restaurant">Contact us</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 KitchenPro. All rights reserved.</div>
+      <div class="footer-copy"><a href="/privacy" style="color:inherit;text-decoration:none;margin-right:14px;">Privacy</a><a href="/terms" style="color:inherit;text-decoration:none;">Terms</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

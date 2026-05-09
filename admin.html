@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KitchenPro — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg:#f5f0e8;--surface:#faf7f2;--surface2:#f0e8d8;--surface3:#e4d5bc;
+  --border:rgba(122,92,58,0.12);--border2:rgba(122,92,58,0.22);
+  --text:#2c2416;--text2:#5a4a32;--text3:#8a7a62;
+  --green:#4a6741;--green-dim:rgba(74,103,65,0.10);--green-light:#e8f0e4;
+  --red:#a32d2d;--red-dim:rgba(163,45,45,0.10);
+  --amber:#854f0b;--amber-dim:rgba(133,79,11,0.10);
+  --blue:#185fa5;--blue-dim:rgba(24,95,165,0.10);
+  --white:#ffffff;
+  --r:10px;--rsm:6px;
+  --ff:'Lato',sans-serif;--fd:'Playfair Display',serif;--fm:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:var(--ff);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;}
+
+/* AUTH */
+.auth-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:1000;flex-direction:column;align-items:center;justify-content:center;}
+.auth-screen.open{display:flex;}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:36px;width:360px;text-align:center;}
+.auth-logo{font-family:var(--fd);font-size:26px;color:var(--green);margin-bottom:4px;}
+.auth-tag{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:24px;}
+.auth-err{background:var(--red-dim);color:var(--red);font-size:12px;padding:8px 12px;border-radius:var(--rsm);margin-bottom:12px;display:none;}
+.auth-err.show{display:block;}
+.fi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rsm);color:var(--text);font-size:13px;font-family:var(--ff);padding:8px 12px;width:100%;margin-bottom:10px;}
+.fi:focus{outline:none;border-color:var(--green);}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:200px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.brand{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+.brand-name{font-family:var(--fd);font-size:18px;color:var(--green);line-height:1.1;}
+.brand-sub{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+.nav{padding:8px;flex:1;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rsm);cursor:pointer;color:var(--text2);font-size:13px;transition:all .12s;margin-bottom:1px;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--green-dim);color:var(--green);font-weight:700;}
+.nav-icon{font-size:13px;width:16px;text-align:center;}
+.sidebar-foot{padding:14px 16px;border-top:1px solid var(--border);}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-family:var(--fd);font-size:20px;color:var(--text);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.live-text{font-size:12px;color:var(--text3);}
+.content{flex:1;overflow-y:auto;padding:22px;}
+.panel{display:none;}.panel.active{display:block;}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px;}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;}
+.metric-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.metric-val{font-family:var(--fd);font-size:30px;color:var(--text);line-height:1;}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+.metric-green .metric-val{color:var(--green);}
+.metric-amber .metric-val{color:var(--amber);}
+.metric-red .metric-val{color:var(--red);}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:13px 17px;border-bottom:1px solid var(--border);}
+.card-title{font-size:13px;font-weight:700;color:var(--text);}
+.card-body{padding:17px;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:9px 13px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);background:var(--surface2);}
+td{padding:10px 13px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;}
+td:first-child{color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.empty-row td{text-align:center;color:var(--text3);padding:32px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
+.badge-green{background:var(--green-dim);color:var(--green);}
+.badge-amber{background:var(--amber-dim);color:var(--amber);}
+.badge-red{background:var(--red-dim);color:var(--red);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+.badge-gray{background:var(--surface3);color:var(--text3);}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:var(--rsm);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-weight:700;font-family:var(--ff);cursor:pointer;transition:all .12s;}
+.btn:hover{background:var(--surface2);color:var(--text);}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green);}
+.btn-green:hover{background:#3d5836;color:#fff;}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-danger{color:var(--red);border-color:var(--red-dim);}
+.btn-danger:hover{background:var(--red-dim);}
+
+/* MRR CHART */
+.mrr-bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px;}
+.mrr-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.mrr-bar{width:100%;background:var(--green);border-radius:4px 4px 0 0;min-height:4px;transition:height .3s;}
+.mrr-bar-label{font-size:10px;color:var(--text3);text-align:center;}
+.mrr-bar-val{font-size:10px;color:var(--text2);font-family:var(--fm);}
+
+/* REVENUE GRID */
+.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(44,36,22,0.6);z-index:200;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);width:100%;max-width:480px;padding:24px;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modal-title{font-family:var(--fd);font-size:20px;}
+.close-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;}
+.detail-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.detail-row:last-child{border:none;}
+.detail-label{color:var(--text3);}
+.detail-val{color:var(--text);font-weight:700;}
+.detail-mono{font-family:var(--fm);font-size:12px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--green);color:#fff;border-radius:var(--rsm);padding:11px 18px;font-size:13px;font-weight:700;z-index:999;transform:translateY(70px);opacity:0;transition:all .22s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth-screen open" id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">KitchenPro</div>
+    <div class="auth-tag">Admin Dashboard</div>
+    <div class="auth-err" id="auth-err"></div>
+    <input class="fi" id="auth-email" type="email" placeholder="Admin email">
+    <input class="fi" id="auth-pass" type="password" placeholder="Password">
+    <button class="btn btn-green" style="width:100%;padding:10px;font-size:14px;" onclick="doLogin()">Sign in to Admin</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="app" style="display:none;">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-name">Kitchen<br>Pro</div>
+      <div class="brand-sub">Admin Panel</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="showPanel('overview',this)"><span class="nav-icon">◈</span> Overview</div>
+      <div class="nav-item" onclick="showPanel('subscribers',this)"><span class="nav-icon">👥</span> Subscribers</div>
+      <div class="nav-item" onclick="showPanel('revenue',this)"><span class="nav-icon">$</span> Revenue</div>
+      <div class="nav-item" onclick="showPanel('activity',this)"><span class="nav-icon">⚡</span> Activity</div>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="btn btn-sm" style="width:100%;color:var(--text3);" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="panel-title">Overview</div>
+      <div class="topbar-right">
+        <div class="live-dot"></div>
+        <div class="live-text">Live data</div>
+        <button class="btn btn-sm" onclick="loadAll()">↻ Refresh</button>
+        <a href="https://kitchenpro.restaurant" target="_blank" class="btn btn-sm">View site ↗</a>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="panel active" id="panel-overview">
+        <div class="metrics">
+          <div class="metric metric-green">
+            <div class="metric-label">Monthly recurring</div>
+            <div class="metric-val" id="m-mrr">—</div>
+            <div class="metric-sub">MRR (test mode)</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Total subscribers</div>
+            <div class="metric-val" id="m-subs">—</div>
+            <div class="metric-sub" id="m-subs-sub">active + trialing</div>
+          </div>
+          <div class="metric metric-amber">
+            <div class="metric-label">Trialing</div>
+            <div class="metric-val" id="m-trial">—</div>
+            <div class="metric-sub">converting soon</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Total recipes</div>
+            <div class="metric-val" id="m-recipes">—</div>
+            <div class="metric-sub">across all kitchens</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent signups</div></div>
+            <table>
+              <thead><tr><th>Email</th><th>Signed up</th><th>Status</th><th>Recipes</th><th>Trial ends</th></tr></thead>
+              <tbody id="overview-table"><tr class="empty-row"><td colspan="5">Loading...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Plan breakdown</div></div>
+            <div class="card-body" id="plan-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBSCRIBERS -->
+      <div class="panel" id="panel-subscribers">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All subscribers</div>
+            <div style="font-size:12px;color:var(--text3);" id="sub-count-label">—</div>
+          </div>
+          <table>
+            <thead><tr><th>Email</th><th>Status</th><th>Signed up</th><th>Trial ends</th><th>Recipes</th><th>Ingredients</th><th></th></tr></thead>
+            <tbody id="sub-table"><tr class="empty-row"><td colspan="7">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REVENUE -->
+      <div class="panel" id="panel-revenue">
+        <div class="metrics" style="grid-template-columns:repeat(3,minmax(0,1fr));">
+          <div class="metric metric-green">
+            <div class="metric-label">MRR</div>
+            <div class="metric-val" id="rev-mrr">—</div>
+            <div class="metric-sub">monthly recurring</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">ARR</div>
+            <div class="metric-val" id="rev-arr">—</div>
+            <div class="metric-sub">annualized run rate</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Avg revenue / user</div>
+            <div class="metric-val" id="rev-arpu">—</div>
+            <div class="metric-sub">ARPU</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Subscription breakdown</div></div>
+          <table>
+            <thead><tr><th>Plan</th><th>Price</th><th>Subscribers</th><th>MRR contribution</th></tr></thead>
+            <tbody id="rev-table"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Revenue milestones</div>
+          </div>
+          <div class="card-body" id="milestones"></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY -->
+      <div class="panel" id="panel-activity">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Platform activity</div></div>
+          <div class="card-body" id="activity-body"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Kitchen usage</div></div>
+          <table>
+            <thead><tr><th>Kitchen</th><th>Recipes</th><th>Ingredients</th><th>Photos</th><th>Last active</th></tr></thead>
+            <tbody id="usage-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SUBSCRIBER DETAIL MODAL -->
+<div class="overlay" id="sub-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-email">Subscriber</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://gtswphdflghrairffhzg.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3dwaGRmbGdocmFpcmZmaHpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MDE0ODMsImV4cCI6MjA4OTk3NzQ4M30.0OHJygM6gHhT0YX6D5qen6Yl1kE2ZFRnw1CNWGsvaQI';
+const ADMIN_EMAIL = 'cheftony@cheftonysbethesda.com';
+const MONTHLY_PRICE = 17;
+const TRIAL_PRICE = 1;
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let currentUser = null;
+let allData = [];
+
+// ── AUTH ──
+async function doLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const err = document.getElementById('auth-err');
+  err.classList.remove('show');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
+  if (data.user.email !== ADMIN_EMAIL) {
+    await sb.auth.signOut();
+    err.textContent = 'Access denied — admin only.'; err.classList.add('show'); return;
+  }
+  currentUser = data.user;
+  document.getElementById('auth-screen').classList.remove('open');
+  document.getElementById('app').style.display = 'flex';
+  await loadAll();
+}
+
+async function signOut() { await sb.auth.signOut(); location.reload(); }
+
+// ── DATA ──
+async function loadAll() {
+  const [{ data: users }, { data: subs }, { data: recipes }, { data: ingredients }, { data: photos }] = await Promise.all([
+    sb.rpc ? sb.from('subscriptions').select('*, user_id') : sb.from('subscriptions').select('*'),
+    sb.from('subscriptions').select('*'),
+    sb.from('recipes').select('id, owner_id, created_at, name'),
+    sb.from('ingredients').select('id, owner_id'),
+    sb.from('recipe_photos').select('id, recipe_id'),
+  ]);
+
+  // Get users via auth — fetch from subscriptions joined approach
+  const { data: subData } = await sb
+    .from('subscriptions')
+    .select('*');
+
+  // Build combined dataset from subscriptions + cross reference
+  const { data: fullData } = await sb.rpc
+    ? { data: null }
+    : { data: null };
+
+  // Direct query approach
+  allData = (subData || []).map(s => {
+    const userRecipes = (recipes || []).filter(r => r.owner_id === s.user_id);
+    const userIngr = (ingredients || []).filter(i => i.owner_id === s.user_id);
+    const userPhotoCount = userRecipes.reduce((count, r) => {
+      return count + (photos || []).filter(p => p.recipe_id === r.id).length;
+    }, 0);
+    const lastRecipe = userRecipes.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    return {
+      ...s,
+      recipe_count: userRecipes.length,
+      ingredient_count: userIngr.length,
+      photo_count: userPhotoCount,
+      last_active: lastRecipe?.created_at || s.created_at,
+    };
+  });
+
+  renderAll();
+  toast('Data refreshed');
+}
+
+function renderAll() {
+  renderOverview();
+  renderSubscribers();
+  renderRevenue();
+  renderActivity();
+}
+
+// ── OVERVIEW ──
+function renderOverview() {
+  const active = allData.filter(s => s.status === 'active').length;
+  const trialing = allData.filter(s => s.status === 'trialing').length;
+  const total = active + trialing;
+  const mrr = (active * MONTHLY_PRICE) + (trialing * TRIAL_PRICE);
+  const totalRecipes = allData.reduce((s, u) => s + (u.recipe_count || 0), 0);
+
+  document.getElementById('m-mrr').textContent = '$' + mrr.toFixed(0);
+  document.getElementById('m-subs').textContent = total;
+  document.getElementById('m-subs-sub').textContent = `${active} active · ${trialing} trialing`;
+  document.getElementById('m-trial').textContent = trialing;
+  document.getElementById('m-recipes').textContent = totalRecipes;
+
+  // Recent signups table
+  const tbody = document.getElementById('overview-table');
+  if (!allData.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No subscribers yet</td></tr>';
+  } else {
+    tbody.innerHTML = allData.slice(0, 8).map(s => {
+      const cls = s.status === 'active' ? 'badge-green' : s.status === 'trialing' ? 'badge-amber' : 'badge-red';
+      const trialEnd = s.trial_ends_at ? new Date(s.trial_ends_at).toLocaleDateString() : '—';
+      const created = s.created_at ? new Date(s.created_at).toLocaleDateString() : '—';
+      return `<tr>
+        <td style="font-family:var(--fm);font-size:12px;">${s.user_id?.slice(0,8)}...</td>
+        <td>${created}</td>
+        <td><span class="badge ${cls}">${s.status}</span></td>
+        <td>${s.recipe_count || 0}</td>
+        <td>${trialEnd}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Plan breakdown
+  const breakdown = document.getElementById('plan-breakdown');
+  breakdown.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--text2);">Active ($24/mo)</span>
+        <span style="font-size:13px;font-weight:700;color:var(--green);">${active}</span>
+      </div>
+      <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${total ? (active/total*100) : 0}%;background:var(--green);border-radius:4px;"></div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--text2);">Trialing ($1)</span>
+        <span style="font-size:13px;font-weight:700;color:var(--amber);">${trialing}</span>
+      </div>
+      <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${total ? (trialing/total*100) : 0}%;background:var(--amber);border-radius:4px;"></div>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:8px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text3);">MRR</span>
+        <span style="font-family:var(--fm);font-size:13px;color:var(--green);font-weight:700;">$${mrr.toFixed(0)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="font-size:12px;color:var(--text3);">ARR run rate</span>
+        <span style="font-family:var(--fm);font-size:13px;color:var(--text);font-weight:700;">$${(mrr * 12).toFixed(0)}</span>
+      </div>
+    </div>`;
+}
+
+// ── SUBSCRIBERS ──
+function renderSubscribers() {
+  document.getElementById('sub-count-label').textContent = `${allData.length} total`;
+  const tbody = document.getElementById('sub-table');
+  if (!allData.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No subscribers yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allData.map((s, i) => {
+    const cls = s.status === 'active' ? 'badge-green' : s.status === 'trialing' ? 'badge-amber' : 'badge-red';
+    const trialEnd = s.trial_ends_at ? new Date(s.trial_ends_at).toLocaleDateString() : '—';
+    const created = s.created_at ? new Date(s.created_at).toLocaleDateString() : '—';
+    return `<tr>
+      <td style="font-family:var(--fm);font-size:11px;">${s.user_id?.slice(0,12)}...</td>
+      <td><span class="badge ${cls}">${s.status}</span></td>
+      <td>${created}</td>
+      <td>${trialEnd}</td>
+      <td>${s.recipe_count || 0}</td>
+      <td>${s.ingredient_count || 0}</td>
+      <td><button class="btn btn-sm" onclick="viewSubscriber(${i})">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── REVENUE ──
+function renderRevenue() {
+  const active = allData.filter(s => s.status === 'active').length;
+  const trialing = allData.filter(s => s.status === 'trialing').length;
+  const total = active + trialing;
+  const mrr = (active * MONTHLY_PRICE) + (trialing * TRIAL_PRICE);
+  const arr = mrr * 12;
+  const arpu = total > 0 ? (mrr / total) : 0;
+
+  document.getElementById('rev-mrr').textContent = '$' + mrr.toFixed(0);
+  document.getElementById('rev-arr').textContent = '$' + arr.toFixed(0);
+  document.getElementById('rev-arpu').textContent = '$' + arpu.toFixed(2);
+
+  document.getElementById('rev-table').innerHTML = `
+    <tr>
+      <td>Monthly plan</td>
+      <td style="font-family:var(--fm)">$24.00/mo</td>
+      <td><strong>${active}</strong></td>
+      <td style="font-family:var(--fm);color:var(--green)">$${(active * 17).toFixed(0)}</td>
+    </tr>
+    <tr>
+      <td>Trial ($1 intro)</td>
+      <td style="font-family:var(--fm)">$1.00/mo</td>
+      <td><strong>${trialing}</strong></td>
+      <td style="font-family:var(--fm);color:var(--amber)">$${(trialing * 1).toFixed(0)}</td>
+    </tr>
+    <tr>
+      <td><strong>Total</strong></td>
+      <td></td>
+      <td><strong>${total}</strong></td>
+      <td style="font-family:var(--fm);font-weight:700;color:var(--green)">$${mrr.toFixed(0)}</td>
+    </tr>`;
+
+  // Milestones
+  const milestones = [
+    { label: 'First subscriber', target: 1, current: total, val: '$24 MRR' },
+    { label: '10 subscribers', target: 10, current: total, val: '$240 MRR' },
+    { label: '50 subscribers', target: 50, current: total, val: '$850 MRR' },
+    { label: '100 subscribers', target: 100, current: total, val: '$1,700 MRR' },
+    { label: '500 subscribers', target: 500, current: total, val: '$8,500 MRR' },
+  ];
+  document.getElementById('milestones').innerHTML = milestones.map(m => {
+    const pct = Math.min(100, (m.current / m.target) * 100);
+    const done = m.current >= m.target;
+    return `<div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:13px;color:${done ? 'var(--green)' : 'var(--text2)'};">
+          ${done ? '✓ ' : ''}${m.label}
+        </span>
+        <span style="font-size:12px;color:var(--text3);">${m.val} · ${m.current}/${m.target}</span>
+      </div>
+      <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${done ? 'var(--green)' : 'var(--surface3)'};border-radius:3px;transition:width .5s;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ACTIVITY ──
+function renderActivity() {
+  const active = allData.filter(s => s.status === 'active').length;
+  const trialing = allData.filter(s => s.status === 'trialing').length;
+  const total = active + trialing;
+  const totalRecipes = allData.reduce((s, u) => s + (u.recipe_count || 0), 0);
+  const totalIngr = allData.reduce((s, u) => s + (u.ingredient_count || 0), 0);
+  const totalPhotos = allData.reduce((s, u) => s + (u.photo_count || 0), 0);
+
+  document.getElementById('activity-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+      <div style="background:var(--surface2);border-radius:var(--rsm);padding:14px;text-align:center;">
+        <div style="font-family:var(--fd);font-size:28px;color:var(--green)">${total}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;">Kitchens</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--rsm);padding:14px;text-align:center;">
+        <div style="font-family:var(--fd);font-size:28px;color:var(--text)">${totalRecipes}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;">Recipes</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:var(--rsm);padding:14px;text-align:center;">
+        <div style="font-family:var(--fd);font-size:28px;color:var(--text)">${totalIngr}</div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;">Ingredients</div>
+      </div>
+    </div>`;
+
+  const tbody = document.getElementById('usage-table');
+  if (!allData.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No usage data yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allData.map(s => {
+    const last = s.last_active ? new Date(s.last_active).toLocaleDateString() : '—';
+    return `<tr>
+      <td style="font-family:var(--fm);font-size:11px;">${s.user_id?.slice(0,12)}...</td>
+      <td>${s.recipe_count || 0}</td>
+      <td>${s.ingredient_count || 0}</td>
+      <td>${s.photo_count || 0}</td>
+      <td>${last}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── SUBSCRIBER DETAIL ──
+function viewSubscriber(idx) {
+  const s = allData[idx];
+  document.getElementById('modal-email').textContent = `Subscriber #${idx + 1}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-row"><span class="detail-label">User ID</span><span class="detail-val detail-mono">${s.user_id?.slice(0,20)}...</span></div>
+    <div class="detail-row"><span class="detail-label">Status</span>
+      <span class="badge ${s.status === 'active' ? 'badge-green' : s.status === 'trialing' ? 'badge-amber' : 'badge-red'}">${s.status}</span>
+    </div>
+    <div class="detail-row"><span class="detail-label">Stripe subscription</span><span class="detail-val detail-mono">${s.stripe_subscription_id || '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Trial ends</span><span class="detail-val">${s.trial_ends_at ? new Date(s.trial_ends_at).toLocaleDateString() : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Period end</span><span class="detail-val">${s.current_period_end ? new Date(s.current_period_end).toLocaleDateString() : '—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Recipes</span><span class="detail-val">${s.recipe_count || 0}</span></div>
+    <div class="detail-row"><span class="detail-label">Ingredients</span><span class="detail-val">${s.ingredient_count || 0}</span></div>
+    <div class="detail-row"><span class="detail-label">Photos uploaded</span><span class="detail-val">${s.photo_count || 0}</span></div>
+    ${s.stripe_subscription_id ? `
+    <div style="margin-top:16px;display:flex;gap:8px;">
+      <a href="https://dashboard.stripe.com/test/subscriptions/${s.stripe_subscription_id}" target="_blank" class="btn btn-sm btn-green">View in Stripe ↗</a>
+    </div>` : ''}`;
+  document.getElementById('sub-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('sub-modal').classList.remove('open'); }
+document.getElementById('sub-modal').addEventListener('click', e => { if (e.target === document.getElementById('sub-modal')) closeModal(); });
+
+// ── NAV ──
+function showPanel(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  el.classList.add('active');
+  const titles = { overview: 'Overview', subscribers: 'Subscribers', revenue: 'Revenue', activity: 'Activity' };
+  document.getElementById('panel-title').textContent = titles[id];
+}
+
+// ── TOAST ──
+let tt;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── BOOT ──
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user?.email === ADMIN_EMAIL) {
+    currentUser = session.user;
+    document.getElementById('auth-screen').classList.remove('open');
+    document.getElementById('app').style.display = 'flex';
+    await loadAll();
+  } else {
+    document.getElementById('auth-screen').classList.add('open');
+  }
+}
+boot();
+</script>
+</body>
+</html>
