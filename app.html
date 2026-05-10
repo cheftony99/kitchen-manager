@@ -205,6 +205,54 @@ tr:hover td{background:var(--surface2);}
   h1,h2,h3{page-break-after:avoid;}
   li{page-break-inside:avoid;}
 }
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width:768px) {
+  .sidebar{position:fixed;left:-280px;top:0;bottom:0;width:260px;z-index:300;transition:left .25s ease;box-shadow:none;}
+  .sidebar.open{left:0;box-shadow:4px 0 24px rgba(0,0,0,.18);}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:299;}
+  .sidebar-overlay.open{display:block;}
+  .app{display:flex;flex-direction:column;}
+  .main{width:100%;}
+  .topbar{padding:10px 14px;}
+  .topbar-title{font-size:17px;}
+  .hamburger{display:flex!important;}
+  .content{padding:14px;}
+  .metrics{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+  .metric{padding:12px 13px;}
+  .metric-val{font-size:22px;}
+  .recipe-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+  .rc-photo,.rc-no-photo{height:100px;}
+  .rc-name{font-size:14px;}
+  .form-grid{grid-template-columns:1fr;}
+  .ir{grid-template-columns:1fr 65px 75px 26px;gap:5px;}
+  table{font-size:12px;}
+  th,td{padding:7px 8px;}
+  .modal{max-width:calc(100vw - 32px);padding:18px;max-height:85vh;}
+  .auth-box{width:calc(100vw - 40px);padding:24px;}
+  .search-bar{font-size:14px;padding:10px 13px;}
+  .btn{padding:8px 12px;font-size:12px;}
+  .toast{left:14px;right:14px;bottom:14px;}
+  .cost-box{padding:10px 12px;}
+  .pw-box{max-width:calc(100vw - 40px);padding:24px;}
+  .price-big{font-size:36px;}
+  /* Ingredient table: hide less important columns on small screens */
+  #ingr-tbody td:nth-child(5),
+  #panel-ingredients th:nth-child(5){display:none;}
+  /* Costing table scroll */
+  #panel-costing .card{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  /* Invoice review */
+  #inv-review .card{overflow-x:auto;}
+}
+@media (max-width:480px) {
+  .metrics{grid-template-columns:1fr 1fr;gap:6px;}
+  .metric-val{font-size:20px;}
+  .topbar-actions .btn:not(.btn-accent){display:none;}
+  .recipe-grid{grid-template-columns:1fr 1fr;gap:8px;}
+  .rc-photo,.rc-no-photo{height:80px;}
+  th,td{padding:6px 6px;font-size:11px;}
+  #ingr-tbody td:nth-child(4),
+  #panel-ingredients th:nth-child(4){display:none;}
+}
 </style>
 </head>
 <body>
@@ -277,8 +325,10 @@ tr:hover td{background:var(--surface2);}
     </div>
   </div>
 
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="main">
     <div class="topbar">
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px;margin-right:8px;color:var(--text);font-size:20px;align-items:center;justify-content:center;">☰</button>
       <div class="topbar-title" id="panel-title">Dashboard</div>
       <div class="topbar-actions">
         <button class="btn" onclick="openIngrModal()">+ Ingredient</button>
@@ -431,7 +481,7 @@ tr:hover td{background:var(--surface2);}
                   style="padding:5px 10px;background:transparent;border:none;color:var(--text2);cursor:pointer;font-size:12px;font-family:var(--ff);">📱 Station</button>
               </div>
               <!-- Print button -->
-              <button id="prep-print-btn" onclick="printPrepSheet()" style="display:none;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ff);display:none;align-items:center;gap:6px;">
+              <button id="prep-print-btn" onclick="printPrepSheet()" style="display:none;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ff);align-items:center;gap:6px;">
                 🖨 Print
               </button>
             </div>
@@ -3744,7 +3794,17 @@ function navToPanel(panel) {
   const navItem = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick')?.includes(`'${panel}'`));
   if (navItem) nav(panel, navItem);
 }
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
 function nav(panel,el){
+  closeSidebar();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('panel-'+panel).classList.add('active');
