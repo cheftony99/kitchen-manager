@@ -212,8 +212,8 @@ tr:hover td{background:var(--surface2);}
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:299;}
   .sidebar-overlay.open{display:block;}
   .app{display:flex;flex-direction:column;}
-  .main{width:100%;}
-  .topbar{padding:10px 14px;}
+  .main{width:100%;overflow-x:hidden;}
+  .topbar{padding:10px 16px;}
   .topbar-title{font-size:17px;}
   .hamburger{display:flex!important;}
   .content{padding:14px;}
@@ -342,7 +342,7 @@ tr:hover td{background:var(--surface2);}
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="main">
     <div class="topbar">
-      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px;margin-right:8px;color:var(--text);font-size:20px;align-items:center;justify-content:center;">☰</button>
+      <button class="hamburger" id="hamburger" onclick="toggleSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px 8px;margin-right:6px;color:var(--text);font-size:20px;align-items:center;justify-content:center;flex-shrink:0;">☰</button>
       <div class="topbar-title" id="panel-title">Dashboard</div>
       <div class="topbar-actions">
         <button class="btn" onclick="openIngrModal()">+ Ingredient</button>
@@ -423,11 +423,11 @@ tr:hover td{background:var(--surface2);}
 
       <!-- RECIPE BOOKS -->
       <div class="panel" id="panel-books">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-          <div style="font-size:13px;color:var(--text3);">Organize recipes into books — double-click any book to browse its recipes</div>
-          <button class="btn btn-accent" onclick="openBookModal()">+ New book</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:13px;color:var(--text3);flex:1;min-width:0;">Organize recipes into books — double-click any book to browse its recipes</div>
+          <button class="btn btn-accent" style="flex-shrink:0;" onclick="openBookModal()">+ New book</button>
         </div>
-        <div id="books-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
+        <div id="books-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
       </div>
 
       <div class="panel" id="panel-ingredients">
