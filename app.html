@@ -240,8 +240,20 @@ tr:hover td{background:var(--surface2);}
   #panel-ingredients th:nth-child(5){display:none;}
   /* Costing table scroll */
   #panel-costing .card{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #panel-costing table{min-width:520px;}
+  /* Dashboard table scroll */
+  #panel-dashboard .card{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #panel-dashboard table{min-width:480px;}
   /* Invoice review */
   #inv-review .card{overflow-x:auto;}
+  /* Invoice upload: stack upload zone + metrics vertically */
+  #panel-invoices [style*="grid-template-columns:2fr 1fr"]{grid-template-columns:1fr!important;}
+  /* Invoice metrics row: horizontal on mobile */
+  #panel-invoices [style*="flex-direction:column"]{flex-direction:row!important;flex-wrap:wrap;}
+  #panel-invoices [style*="flex-direction:column"] .metric{flex:1;min-width:0;}
+  /* Invoice history table scroll */
+  #panel-invoices .card:last-child{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #panel-invoices .card:last-child table{min-width:500px;}
 }
 @media (max-width:480px) {
   .metrics{grid-template-columns:1fr 1fr;gap:6px;}
@@ -252,6 +264,8 @@ tr:hover td{background:var(--surface2);}
   th,td{padding:6px 6px;font-size:11px;}
   #ingr-tbody td:nth-child(4),
   #panel-ingredients th:nth-child(4){display:none;}
+  /* Costing summary metrics: 2x2 grid */
+  #panel-costing .metrics{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
