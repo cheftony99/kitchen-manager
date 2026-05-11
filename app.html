@@ -309,6 +309,14 @@ tr:hover td{background:var(--surface2);}
       Start $1 Trial with Stripe
     </button>
     <div style="font-size:11px;color:var(--text3);margin-top:10px;">After payment, refresh this page to activate your account.</div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div id="promo-toggle" style="font-size:12px;color:var(--accent);cursor:pointer;text-align:center;" onclick="document.getElementById('promo-form').style.display='flex';this.style.display='none';">Have an access code?</div>
+      <div id="promo-form" style="display:none;gap:8px;align-items:center;">
+        <input class="fi" id="promo-input" placeholder="Enter code" style="flex:1;font-family:var(--fm);text-transform:uppercase;font-size:13px;">
+        <button class="btn btn-accent" onclick="redeemPromoCode()" id="promo-btn" style="flex-shrink:0;">Activate</button>
+      </div>
+      <div id="promo-err" style="display:none;font-size:11px;color:var(--red);margin-top:6px;text-align:center;"></div>
+    </div>
   </div>
 </div>
 
@@ -1139,6 +1147,7 @@ async function onSignIn(user){
   document.getElementById('user-email').textContent=user.email;
   document.getElementById('user-avatar').textContent=user.email[0].toUpperCase();
   await loadSubscription();
+  recordReferral(); // fire-and-forget referral tracking
   document.getElementById('app').style.display='flex';
   if(!hasAccess()){
     if(justReturnedFromCheckout){
@@ -1207,6 +1216,93 @@ async function startCheckout(){
     toast('Network error starting checkout. Please try again.');
     document.getElementById('paywall').classList.add('open');
   }
+}
+
+// ── PROMO CODES ──
+async function redeemPromoCode(){
+  const input=document.getElementById('promo-input');
+  const errEl=document.getElementById('promo-err');
+  const btn=document.getElementById('promo-btn');
+  const code=input.value.trim().toUpperCase();
+  errEl.style.display='none';
+  if(!code){errEl.textContent='Please enter a code.';errEl.style.display='block';return;}
+  if(!currentUser){errEl.textContent='Please sign in first.';errEl.style.display='block';return;}
+
+  btn.disabled=true;btn.textContent='Checking...';
+  try{
+    // Validate code
+    const{data:promo,error:pErr}=await sb.from('promo_codes').select('*').eq('code',code).maybeSingle();
+    if(pErr||!promo){errEl.textContent='Invalid code. Check spelling and try again.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
+    if(promo.used_count>=promo.max_uses){errEl.textContent='This code has already been used.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
+    if(promo.expires_at&&new Date(promo.expires_at)<new Date()){errEl.textContent='This code has expired.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
+
+    // Check if already redeemed by this user
+    const{data:existing}=await sb.from('promo_redemptions').select('id').eq('promo_code_id',promo.id).eq('user_id',currentUser.id).maybeSingle();
+    if(existing){errEl.textContent='You already used this code.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
+
+    // Create subscription (free access)
+    const{error:subErr}=await sb.from('subscriptions').upsert({
+      user_id:currentUser.id,
+      status:'active',
+      stripe_subscription_id:'promo_'+code+'_'+Date.now(),
+      product:'kitchen_manager',
+      current_period_end:new Date(Date.now()+365*24*60*60*1000).toISOString()
+    },{onConflict:'user_id',ignoreDuplicates:false});
+
+    if(subErr){console.error('sub error',subErr);errEl.textContent='Error activating. Please try again.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
+
+    // Record redemption and increment used count
+    await sb.from('promo_redemptions').insert({promo_code_id:promo.id,user_id:currentUser.id});
+    await sb.rpc('increment_promo_used',{code_id:promo.id}).catch(()=>{
+      // Fallback if RPC doesn't exist: direct update
+      sb.from('promo_codes').update({used_count:promo.used_count+1}).eq('id',promo.id);
+    });
+
+    // Reload subscription and enter app
+    await loadSubscription();
+    document.getElementById('paywall').classList.remove('open');
+    toast('Code activated! Welcome to KitchenPro.');
+    await loadAll();
+    renderAll();
+  }catch(e){
+    console.error('promo error',e);
+    errEl.textContent='Something went wrong. Please try again.';
+    errEl.style.display='block';
+  }
+  btn.disabled=false;btn.textContent='Activate';
+}
+
+// ── REFERRAL TRACKING ──
+function captureReferral(){
+  const params=new URLSearchParams(location.search);
+  const ref=params.get('ref');
+  if(ref){
+    localStorage.setItem('kp_ref',ref);
+    // Clean ref from URL
+    params.delete('ref');
+    const newUrl=params.toString()?location.pathname+'?'+params.toString():location.pathname;
+    history.replaceState(null,'',newUrl);
+  }
+}
+
+async function recordReferral(){
+  const refCode=localStorage.getItem('kp_ref');
+  if(!refCode||!currentUser)return;
+  try{
+    // Look up affiliate
+    const{data:affiliate}=await sb.from('affiliates').select('id').eq('affiliate_code',refCode).maybeSingle();
+    if(!affiliate)return;
+    // Check if already recorded
+    const{data:existing}=await sb.from('referrals').select('id').eq('referred_user_id',currentUser.id).maybeSingle();
+    if(existing)return;
+    // Record the referral
+    await sb.from('referrals').insert({
+      affiliate_id:affiliate.id,
+      referred_user_id:currentUser.id,
+      status:'signed_up'
+    });
+    localStorage.removeItem('kp_ref');
+  }catch(e){console.warn('referral tracking error',e);}
 }
 
 // ── DATA ──
@@ -3976,6 +4072,7 @@ function fileToBase64(file) {
 
 // ── AI RECIPE UPLOAD ──
 async function boot(){
+  captureReferral();
   // Handle Stripe return: ?checkout=success means the user just finished Stripe.
   // Subscription row creation is async (webhook), so poll subs table briefly
   // instead of relying on the auth sign-in-time read.
