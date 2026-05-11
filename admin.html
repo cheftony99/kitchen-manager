@@ -156,6 +156,7 @@ tr:hover td{background:var(--surface2);}
       <div class="nav-item" onclick="showPanel('subscribers',this)"><span class="nav-icon">👥</span> Subscribers</div>
       <div class="nav-item" onclick="showPanel('revenue',this)"><span class="nav-icon">$</span> Revenue</div>
       <div class="nav-item" onclick="showPanel('activity',this)"><span class="nav-icon">⚡</span> Activity</div>
+      <div class="nav-item" onclick="showPanel('affiliates',this)"><span class="nav-icon">🤝</span> Affiliates</div>
     </nav>
     <div class="sidebar-foot">
       <button class="btn btn-sm" style="width:100%;color:var(--text3);" onclick="signOut()">Sign out</button>
@@ -277,7 +278,106 @@ tr:hover td{background:var(--surface2);}
         </div>
       </div>
 
+      <!-- AFFILIATES & PROMO CODES -->
+      <div class="panel" id="panel-affiliates">
+        <div class="metrics" style="grid-template-columns:repeat(4,minmax(0,1fr));">
+          <div class="metric metric-green">
+            <div class="metric-label">Active affiliates</div>
+            <div class="metric-val" id="aff-count">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Total referrals</div>
+            <div class="metric-val" id="aff-referrals">—</div>
+          </div>
+          <div class="metric metric-amber">
+            <div class="metric-label">Promo codes used</div>
+            <div class="metric-val" id="promo-used">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Codes remaining</div>
+            <div class="metric-val" id="promo-remaining">—</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <!-- Affiliates -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Affiliates</div>
+              <button class="btn btn-sm btn-green" onclick="showAddAffiliate()">+ Add affiliate</button>
+            </div>
+            <table>
+              <thead><tr><th>Code</th><th>Referrals</th><th>Commission</th><th>Earned</th><th>Link</th></tr></thead>
+              <tbody id="aff-table"><tr class="empty-row"><td colspan="5">Loading...</td></tr></tbody>
+            </table>
+          </div>
+
+          <!-- Promo Codes -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Promo codes</div>
+              <button class="btn btn-sm btn-green" onclick="showAddPromo()">+ New code</button>
+            </div>
+            <table>
+              <thead><tr><th>Code</th><th>Uses</th><th>Max</th><th>Status</th></tr></thead>
+              <tbody id="promo-table"><tr class="empty-row"><td colspan="4">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Referral detail -->
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header"><div class="card-title">Referral history</div></div>
+          <table>
+            <thead><tr><th>Affiliate</th><th>Referred user</th><th>Status</th><th>Signed up</th><th>Converted</th></tr></thead>
+            <tbody id="referral-table"><tr class="empty-row"><td colspan="5">No referrals yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
+  </div>
+</div>
+
+<!-- ADD AFFILIATE MODAL -->
+<div class="overlay" id="aff-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title">Add affiliate</div>
+      <button class="close-btn" onclick="document.getElementById('aff-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">User ID</label>
+      <input class="fi" id="aff-user-id" placeholder="Paste user UUID">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Affiliate code</label>
+      <input class="fi" id="aff-code" placeholder="e.g. CHEF-TONY" style="text-transform:uppercase;font-family:var(--fm);">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Commission rate</label>
+      <input class="fi" id="aff-rate" type="number" value="0.20" step="0.05" min="0" max="1">
+    </div>
+    <button class="btn btn-green" style="width:100%;margin-top:8px;" onclick="saveAffiliate()">Create affiliate</button>
+  </div>
+</div>
+
+<!-- ADD PROMO MODAL -->
+<div class="overlay" id="promo-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <div class="modal-title">New promo code</div>
+      <button class="close-btn" onclick="document.getElementById('promo-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Code</label>
+      <input class="fi" id="new-promo-code" placeholder="e.g. VIP-ACCESS-2026" style="text-transform:uppercase;font-family:var(--fm);">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Max uses</label>
+      <input class="fi" id="new-promo-max" type="number" value="1" min="1">
+    </div>
+    <button class="btn btn-green" style="width:100%;margin-top:8px;" onclick="savePromoCode()">Create code</button>
   </div>
 </div>
 
@@ -362,15 +462,28 @@ async function loadAll() {
     };
   });
 
+  // Load affiliates, referrals, promo codes
+  const [{data:affs},{data:refs},{data:promos}] = await Promise.all([
+    sb.from('affiliates').select('*'),
+    sb.from('referrals').select('*'),
+    sb.from('promo_codes').select('*').order('created_at'),
+  ]);
+  affiliatesData=affs||[];
+  referralsData=refs||[];
+  promoData=promos||[];
+
   renderAll();
   toast('Data refreshed');
 }
+
+let affiliatesData=[], referralsData=[], promoData=[];
 
 function renderAll() {
   renderOverview();
   renderSubscribers();
   renderRevenue();
   renderActivity();
+  renderAffiliates();
 }
 
 // ── OVERVIEW ──
@@ -563,6 +676,110 @@ function renderActivity() {
   }).join('');
 }
 
+// ── AFFILIATES & PROMO CODES ──
+function renderAffiliates() {
+  const totalRefs = referralsData.length;
+  const usedPromos = promoData.reduce((s,p) => s + p.used_count, 0);
+  const remainingPromos = promoData.reduce((s,p) => s + Math.max(0, p.max_uses - p.used_count), 0);
+
+  document.getElementById('aff-count').textContent = affiliatesData.length;
+  document.getElementById('aff-referrals').textContent = totalRefs;
+  document.getElementById('promo-used').textContent = usedPromos;
+  document.getElementById('promo-remaining').textContent = remainingPromos;
+
+  const appUrl = 'https://brilliant-trifle-eea42f.netlify.app/app';
+
+  // Affiliate table
+  const affTbody = document.getElementById('aff-table');
+  if (!affiliatesData.length) {
+    affTbody.innerHTML = '<tr class="empty-row"><td colspan="5">No affiliates yet</td></tr>';
+  } else {
+    affTbody.innerHTML = affiliatesData.map(a => {
+      const refs = referralsData.filter(r => r.affiliate_id === a.id);
+      const activeRefs = refs.filter(r => r.status === 'active').length;
+      const link = `${appUrl}?ref=${a.affiliate_code}`;
+      return `<tr>
+        <td style="font-family:var(--fm);font-size:12px;">${a.affiliate_code}</td>
+        <td>${refs.length} (${activeRefs} active)</td>
+        <td>${(a.commission_rate * 100).toFixed(0)}%</td>
+        <td style="font-family:var(--fm);">$${(a.total_earned || 0).toFixed(2)}</td>
+        <td><button class="btn btn-sm" onclick="copyLink('${link}')" title="${link}">Copy link</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Promo table
+  const promoTbody = document.getElementById('promo-table');
+  if (!promoData.length) {
+    promoTbody.innerHTML = '<tr class="empty-row"><td colspan="4">No codes</td></tr>';
+  } else {
+    promoTbody.innerHTML = promoData.map(p => {
+      const remaining = p.max_uses - p.used_count;
+      const statusCls = remaining > 0 ? 'badge-green' : 'badge-red';
+      const statusText = remaining > 0 ? 'Available' : 'Used';
+      return `<tr>
+        <td style="font-family:var(--fm);font-size:12px;">${p.code}</td>
+        <td>${p.used_count}</td>
+        <td>${p.max_uses}</td>
+        <td><span class="badge ${statusCls}">${statusText}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Referral history
+  const refTbody = document.getElementById('referral-table');
+  if (!referralsData.length) {
+    refTbody.innerHTML = '<tr class="empty-row"><td colspan="5">No referrals yet</td></tr>';
+  } else {
+    refTbody.innerHTML = referralsData.map(r => {
+      const aff = affiliatesData.find(a => a.id === r.affiliate_id);
+      const statusCls = r.status === 'active' ? 'badge-green' : r.status === 'trialing' ? 'badge-amber' : 'badge-gray';
+      return `<tr>
+        <td style="font-family:var(--fm);font-size:12px;">${aff?.affiliate_code || '—'}</td>
+        <td style="font-family:var(--fm);font-size:12px;">${r.referred_user_id?.slice(0,8)}...</td>
+        <td><span class="badge ${statusCls}">${r.status}</span></td>
+        <td>${new Date(r.created_at).toLocaleDateString()}</td>
+        <td>${r.converted_at ? new Date(r.converted_at).toLocaleDateString() : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function copyLink(link) {
+  navigator.clipboard.writeText(link).then(() => toast('Link copied!'));
+}
+
+function showAddAffiliate() {
+  document.getElementById('aff-modal').classList.add('open');
+}
+
+async function saveAffiliate() {
+  const userId = document.getElementById('aff-user-id').value.trim();
+  const code = document.getElementById('aff-code').value.trim().toUpperCase();
+  const rate = parseFloat(document.getElementById('aff-rate').value) || 0.20;
+  if (!userId || !code) { toast('User ID and code are required'); return; }
+  const { error } = await sb.from('affiliates').insert({ user_id: userId, affiliate_code: code, commission_rate: rate });
+  if (error) { toast('Error: ' + error.message); return; }
+  document.getElementById('aff-modal').classList.remove('open');
+  toast('Affiliate created!');
+  await loadAll();
+}
+
+function showAddPromo() {
+  document.getElementById('promo-modal').classList.add('open');
+}
+
+async function savePromoCode() {
+  const code = document.getElementById('new-promo-code').value.trim().toUpperCase();
+  const maxUses = parseInt(document.getElementById('new-promo-max').value) || 1;
+  if (!code) { toast('Code is required'); return; }
+  const { error } = await sb.from('promo_codes').insert({ code, type: 'free_access', max_uses: maxUses });
+  if (error) { toast('Error: ' + error.message); return; }
+  document.getElementById('promo-modal').classList.remove('open');
+  toast('Promo code created!');
+  await loadAll();
+}
+
 // ── SUBSCRIBER DETAIL ──
 function viewSubscriber(idx) {
   const s = allData[idx];
@@ -594,7 +811,7 @@ function showPanel(id, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
   el.classList.add('active');
-  const titles = { overview: 'Overview', subscribers: 'Subscribers', revenue: 'Revenue', activity: 'Activity' };
+  const titles = { overview: 'Overview', subscribers: 'Subscribers', revenue: 'Revenue', activity: 'Activity', affiliates: 'Affiliates & Promo Codes' };
   document.getElementById('panel-title').textContent = titles[id];
 }
 
