@@ -1307,6 +1307,7 @@ async function redeemPromoCode(){
     const{data:promo,error:pErr}=await sb.from('promo_codes').select('*').eq('code',code).maybeSingle();
     if(pErr||!promo){errEl.textContent='Invalid code. Check spelling and try again.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
     if(promo.used_count>=promo.max_uses){errEl.textContent='This code has already been used.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
+    if(promo.product && promo.product !== 'both' && promo.product !== 'kitchen_manager'){errEl.textContent='This code is not valid for KitchenPro.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
     if(promo.expires_at&&new Date(promo.expires_at)<new Date()){errEl.textContent='This code has expired.';errEl.style.display='block';btn.disabled=false;btn.textContent='Activate';return;}
 
     // Check if already redeemed by this user
